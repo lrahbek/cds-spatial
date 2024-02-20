@@ -205,20 +205,20 @@ length(which(result > val))
 
 ```{r forests, eval=FALSE, echo=TRUE}
 # Compute the areas of the forests
-areas <- ___(forests)
+areas <- st_area(forests)
 
 # Create a quick histogram of the areas using hist
-___(___)
+hist(areas)
 
 # Filter to forests greater than 200000 (square meters)
-big_forests <- ___ %>% ___(___(___) > 200000)
+big_forests <- forests %>% filter(unclass(areas) > 200000)
 
 # Can you plot the big_forests with their names??(hint: check the plotting section in Task 5 below)
 
+plot(big_forests["navn"])
 
 # Plot just the geometry of big_forests
-___(___(big_forests))
-
+plot(st_geometry(big_forests))
 ```
 
 
@@ -242,19 +242,19 @@ Often, you also want to plot multiple spatial objects together to see if and how
 
 ```{r plotting-sf, eval=FALSE}
 # Plot the forests object using all defaults
-___(forests)
+plot(forests)
 
 # Plot just the areal_m2 attribute of the forests data
-___(forests[___])
+plot(forests["areal_m2"])
 
 # Create a new object of just the forests geometry
-forests_geo <- ___(forests)
+forests_geo <- st_geometry(forests)
 
 # Plot the geometry of the forests data
-___(forests_geo)
+plot(forests_geo)
 
 # Plot the geometry of the forests and the parks object together
-___(forests_geo, col = "_____");___(parks$geometry, col = _____, add = _____)
+plot(forests_geo, col = "green");plot(parks$geometry, col = "hotpink", add = T)
 
 ```
 
@@ -282,13 +282,13 @@ Multi-band rasters will have more than one layer. An example is a color aerial p
 
 ```{r loadraster, eval=FALSE, echo=TRUE}
 # Load the raster package
-___(___)
+pacman::p_load("raster")
 
 # Read in the mound elevation single-band raster
-elevation <- ____(___)
+elevation <- raster("../data/DNK_msk_alt.grd")
 
 # Read in the orthophoto image multi-band raster
-aarhus <- brick(_____)
+aarhus <- brick("../data/Aarhus_1m.TIF")
 
 # Get the class for the new objects
 class(___)
@@ -386,16 +386,16 @@ When the geographic data you read in with `sf` already has a CRS defined both `s
 
 ```{r crs, eval=FALSE}
 # Determine the CRS for the elevation and playgrounds vector objects
-___(forests)
-___(playgrounds)
+st_crs(forests)
+st_crs(playgrounds)
 
 # Assign the CRS to playgrounds
-crs_1 <- _____
-___(playgrounds) <- crs_1
+crs_1 <- 4326 #in name of file
+st_crs(playgrounds) <- crs_1
 
 # Determine the CRS for the aarhus and elevation rasters
-___(aarhus)
-___(elevation)
+st_crs(aarhus)
+st_crs(elevation)
 
 # Write here the proj4string for the aarhus layer
 crs_2 <- "___"
