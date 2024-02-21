@@ -178,11 +178,13 @@ Tabular data contain spatial data, that you can use to convert these tibbles int
 ```{r st-as-sf, eval = FALSE}
 
 places_sf <- places %>% 
-  filter(!is.na(_________)) %>% 
-  st_as_sf(coords = ____(__________,________))
+  filter(!is.na(CoordinatesFILLTHIS)) %>% 
+  st_as_sf(coords = c("Longitude", "Latitude"))
 
-nitrates_sf <- _______(nitrates, wkt = __________)
+nitrates_sf <- st_as_sf(nitrates, wkt = "WKT")
 
+plot(places_sf$geometry)
+plot(nitrates_sf$WKT)
 ```
 
 
@@ -215,6 +217,27 @@ What can you say about the content of this file?
 ```{r inspect-data}
 # /Start Code / #
 
+# Display the `nitrates_sf` and `places_sf` objects and view their structure. 
+nitrates_sf
+#What type of data does it store? 
+#How many attributes does it contain? #18
+#What is its geometry? ## points
+#What kind of coordinate system does it use? ## northering, eastering
+
+places_sf
+#What type of data does it store? 
+#How many attributes does it contain? #6
+#What is its geometry? ## points 
+#What kind of coordinate system does it use? #longtitude, lattitude 
+
+
+#Display the `elevation` object and view its structure.
+elevation
+#What type of data does it store? 
+#What is the coordinate system used? 
+#How many attributes does it contain?
+#How many dimensions does it have? 
+#What is the data resolution? #0.008333333, 0.008333333
 
 # /End Code/ #
 ```
@@ -237,9 +260,9 @@ Look at the coordinates in `places` and `nitrates`again. While both refer to pla
 ```{r define-crs, eval = FALSE}
 # /Start Code / #
 
-places4326 <- places_sf %>% st_set_crs(_________)
+places4326 <- places_sf %>% st_set_crs(4326)
 
-nitrates25832 <- nitrates_sf %>% _________(________)
+nitrates25832 <- nitrates_sf %>% st_set_crs(25832)
 
 places4326
 nitrates25832
@@ -266,13 +289,33 @@ Remember that you use `st_transform()` to reproject vector data, and `projectRas
 
 * Option 2: Reproject the `elevation` and `places` data into the coordinate reference system used in the `nitrates` object.
   - Create a new object `elevation_####` with the `nitrates` crs.
-  - Visualize the results (`elevation_####`` together with `nitrates`) 
+  - Visualize the results (`elevation_####` together with `nitrates`) 
   
 ## Your solution and answers
 
 ```{r reproject-crs}
 # /Start Code / #
+#option 1
+nitrates4326 <- nitrates25832 %>% st_set_crs(4326)
 
+plot(nitrates4326$WKT, col = "hotpink");plot(places4326$geometry, col = "green", add =T)
+
+#option 2
+
+elevation25832 <- projectRaster(elevation, crs = 25832)
+places25832 <- st_transform(places4326, crs = 25832)
+
+plot(nitrates25832$WKT, col = "hotpink");plot(elevation25832$geometry, col = "green", add =T)
+
+
+library(tmap)
+tm_shape(elevation25832) + 
+    tm_rgb() + 
+    tm_shape(nitrates25832) + 
+    tm_polygons(col = "green") +
+    tm_shape(places25832) + 
+    tm_dots(col = "yellow",
+              size = 1)
 
 # /End Code/ #
 ```
