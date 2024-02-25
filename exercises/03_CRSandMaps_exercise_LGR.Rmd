@@ -176,7 +176,6 @@ Tabular data contain spatial data, that you can use to convert these tibbles int
 - use `plot(places_sf$geometry)` and `plot(nitrates_sf$WKT)` to view each simple feature in space. 
 
 ```{r st-as-sf, eval = FALSE}
-
 places_sf <- places %>% 
   filter(!is.na(CoordinatesFILLTHIS)) %>% 
   st_as_sf(coords = c("Longitude", "Latitude"))
@@ -185,6 +184,9 @@ nitrates_sf <- st_as_sf(nitrates, wkt = "WKT")
 
 plot(places_sf$geometry)
 plot(nitrates_sf$WKT)
+
+plot(places_sf["geometry"])
+plot(nitrates_sf["WKT"])
 ```
 
 
@@ -222,21 +224,21 @@ nitrates_sf
 #What type of data does it store? 
 #How many attributes does it contain? #18
 #What is its geometry? ## points
-#What kind of coordinate system does it use? ## northering, eastering
+#What kind of coordinate system does it use? ## northering, eastering, crs is NA
 
 places_sf
 #What type of data does it store? 
 #How many attributes does it contain? #6
 #What is its geometry? ## points 
-#What kind of coordinate system does it use? #longtitude, lattitude 
+#What kind of coordinate system does it use? #longtitude, lattitude , crs is na 
 
 
 #Display the `elevation` object and view its structure.
 elevation
 #What type of data does it store? 
-#What is the coordinate system used? 
+#What is the coordinate system used? +proj=longlat +ellps=WGS84 +no_defs 
 #How many attributes does it contain?
-#How many dimensions does it have? 
+#How many dimensions does it have? ## 396, 876, 346896 
 #What is the data resolution? #0.008333333, 0.008333333
 
 # /End Code/ #
@@ -296,27 +298,28 @@ Remember that you use `st_transform()` to reproject vector data, and `projectRas
 ```{r reproject-crs}
 # /Start Code / #
 #option 1
-nitrates4326 <- nitrates25832 %>% st_set_crs(4326)
 
-plot(nitrates4326$WKT, col = "hotpink");plot(places4326$geometry, col = "green", add =T)
+nitrates4326 <- st_transform(nitrates25832, crs = 4326)
+plot(nitrates4326["WKT"], col = "hotpink");plot(places4326["geometry"], col = "green", lwd = 10, add = T)
 
 #option 2
-
 elevation25832 <- projectRaster(elevation, crs = 25832)
 places25832 <- st_transform(places4326, crs = 25832)
 
-plot(nitrates25832$WKT, col = "hotpink");plot(elevation25832$geometry, col = "green", add =T)
+plot(nitrates25832["WKT"], col = "hotpink")
+plot(elevation25832["geometry"], col = "green")
 
 
 library(tmap)
-tm_shape(elevation25832) + 
-    tm_rgb() + 
-    tm_shape(nitrates25832) + 
-    tm_polygons(col = "green") +
-    tm_shape(places25832) + 
-    tm_dots(col = "yellow",
-              size = 1)
 
+tm_shape(elevation25832) + 
+  tm_raster(title = "elev (masl)", 
+            style = "cont",
+            palette = "RdYlGn") +
+  tm_shape(nitrates25832) + 
+  tm_dots(col = "red") + 
+  tm_shape(places25832) +
+  tm_dots(col = "blue", size = 0.1)
 # /End Code/ #
 ```
   
