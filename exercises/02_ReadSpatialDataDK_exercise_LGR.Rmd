@@ -66,6 +66,9 @@ shelters <- st_read("../data/shelters.json")
 
 # View the first few features of all layers
 head(parks)
+head(forests)
+head(playgrounds)
+head(shelters)
 ```
 
 ## Questions: 
@@ -214,7 +217,6 @@ hist(areas)
 big_forests <- forests %>% filter(unclass(areas) > 200000)
 
 # Can you plot the big_forests with their names??(hint: check the plotting section in Task 5 below)
-
 plot(big_forests["navn"])
 
 # Plot just the geometry of big_forests
@@ -254,7 +256,7 @@ forests_geo <- st_geometry(forests)
 plot(forests_geo)
 
 # Plot the geometry of the forests and the parks object together
-plot(forests_geo, col = "green");plot(parks$geometry, col = "hotpink", add = T)
+plot(forests_geo, col = "green");plot(parks['geometry'], col = "hotpink", add = T)
 
 ```
 
@@ -291,22 +293,37 @@ elevation <- raster("../data/DNK_msk_alt.grd")
 aarhus <- brick("../data/Aarhus_1m.TIF")
 
 # Get the class for the new objects
-class(___)
-class(___)
+class(elevation) #raster layer
+class(aarhus) #raster brick 
 
 # Identify how many layers each object has
-nlayers(___)
-nlayers(___)
+nlayers(elevation) #1
+nlayers(aarhus) #5
 
 # Identify the resolution of each raster
-___(elevation)
-___(aarhus)
+res(elevation) #0.008333333
+res(aarhus) #1
 ```
 
 *Questions:*
 
 1. What are the dimensions (number of columns and rows) of the `elevation` raster?
+
+```{r}
+ncol(elevation) #876
+nrow(elevation) #396
+```
+
+
 2. What is the resolution of `aarhus` orthophoto? How many layers does it contain and what do they represent?
+```{r}
+res(aarhus) #1
+nlayers(aarhus) #5
+
+names(aarhus) #colours?
+plot(aarhus)
+```
+
 
 Now you've learned how to read in single and multi-band rasters. You should have noticed, based on the `nlayers()` function, that the `elevation` object has a single layer and the `aarhus` object has five (well, four useful ones, if you plot it).
 
@@ -323,20 +340,25 @@ Instead of storing raster objects in data frames, the `raster` package stores sp
 
 ```{r load raster, eval=FALSE, echo=TRUE}
 # Get the extent of the elevation and aarhus object
-___(___)
+extent(elevation)
+extent(aarhus)
 
 # Get the CRS of the aarhus and elevation object
-___(___)
+crs(elevation)
+crs(aarhus)
 
 # Determine the number of grid cells in both raster objects
-___(aarhus)
-___(elevation)
+ncell(aarhus)
+ncell(elevation)
 ```
 
 
 Great work! Although rasters are not stored as data frames, the metadata can easily be extracted using functions like `extent()`, `crs()` and `ncell()`.
 
 *Question 3: It makes sense that the extents and number of cells for Danish national elevation data and Aarhus city would be different because their sizes diverge, but why are the units so different? What are these units?*
+
+elevation has the unit meter (to indicate elevation in the given cell)
+aarhus 
 
 
 # Task 8: Plot your raster object
@@ -353,17 +375,18 @@ The raster package has added useful methods for plotting both single and multi-b
 
 ```{r plot raster, eval=FALSE, echo=TRUE }
 # Plot the elevation raster (single raster)
-___
+plot(elevation)
 
 # Plot the aarhus raster (as a single image for each layer)
-___
+plot(aarhus)
 
 # Plot the aarhus raster as an image
-____
+plotRGB(aarhus)
 
 
 # Plot the two images together (on top of one another). Hint: it only works if their CRSes are compatible. Return to this after Task 9 and 10 if the CRSes are different.
-____
+crs(aarhus)
+crs(elevation)
 ```
 
 
@@ -390,8 +413,8 @@ st_crs(forests)
 st_crs(playgrounds)
 
 # Assign the CRS to playgrounds
-crs_1 <- 4326 #in name of file
-st_crs(playgrounds) <- crs_1
+st_crs(playgrounds) <- 4326
+st_crs(playgrounds)
 
 # Determine the CRS for the aarhus and elevation rasters
 st_crs(aarhus)
@@ -423,19 +446,17 @@ Note that you will use `method = "ngb"` in your call to `projectRaster()` to pre
 
 ```{r crs-assign, eval=FALSE}
 # Get the CRS from the aarhus object
-the_crs <- ___(aarhus, asText = TRUE)
+the_crs <- crs(aarhus, asText = TRUE)
 
 # Project playgrounds to match the CRS of aarhus
-playgrounds_crs <- ___(playgrounds, crs = ___)
+playgrounds_crs <- st_transform(playgrounds, crs = the_crs)
 
 # Project elevation to match the CRS of aarhus
-elevation_crs <- ___(elevation, crs = ___, method = "ngb")
+elevation_crs <- projectRaster(elevation, crs = the_crs, method = "ngb")
 
 # Look at the CRS to see if they match
-___(playgrounds_crs)
-___(elevation_crs)
-
-
+st_crs(playgrounds_crs)
+st_crs(elevation_crs)
 ```
 
 
@@ -457,10 +478,15 @@ Make sure `sf`, `raster` and `tmap` are loaded in your workspace.
 * Run the given `tmap` code. Note that `tm_rgb()` is used for multi-layered raster
 
 ```{r plot, eval=FALSE}
+pacman::p_load("sf", "raster", "tmap")
+
 # Plot aarhus and playgrounds (run both lines together)
 # Do you see the playgrounds?
-___(aarhus, stretch = "lin")
-___(playgrounds, add = TRUE)
+plotRGB(aarhus, stretch = "lin")
+plot(playgrounds, add = TRUE)
+
+plotRGB(aarhus, stretch = "lin")
+plot(playgrounds_crs, col = "green", lwd = 3, add = TRUE)
 
 
 # Simply run the tmap code
