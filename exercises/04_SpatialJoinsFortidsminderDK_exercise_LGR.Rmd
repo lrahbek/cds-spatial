@@ -38,7 +38,6 @@ In this task, you will find out which municipality in Denmark has the most Vikin
 * Plot the monuments (`viking`) on top of the municipalities. You will want to plot only the geometry of the municipalities.
 
 ```{r monuments-dk, eval=FALSE}
-
 # Load the monuments into R
 monuments <- read_sf("../fortidsminder/anlaeg_all_25832.shp")
 
@@ -53,7 +52,7 @@ viking <- monuments %>%
 
 # Prepare municipalities
 library(sf, raster)
-municipalities <-  getData("GADM", country = "DNK", level = 2)
+municipalities <-  raster::getData("GADM", country = "DNK", level = 2)
 municipalities_25832 <- st_transform(st_as_sf(municipalities), crs = 25832)
 
 # Plot the monuments on top of the municipalities
@@ -100,14 +99,19 @@ least <- viking_neigh %>%
   tally() %>% 
   arrange((n))%>%
   slice(1:5)
-  
 
   
 # Plot the municipalities with fewest Viking finds in red over DK municipalities
 plot(st_geometry(municipalities_25832), col = "grey", border = "white")
 plot(municipalities_25832[select(st_intersection(least, municipalities_25832, sparse = FALSE)), ]$geometry, col = "red", add = T)
-
 ```
+
+
+```{r}
+##save viking sf 
+saveRDS(viking_neigh, "../data/viking.rds")
+```
+
 
 Great! The monuments object did not have municipality information until you performed the spatial join with `st_join()`. Now that the municipality information is included you can supply each municipality office with the count and coordinates of monuments they are in charge of so they can monitor and safeguard.
 
@@ -136,7 +140,6 @@ A note about the output of functions that test relationships between two sets of
 # Load objects
 parks
 viking
-
 
 # Create a 10km buffer around Nobelparken (see Week 03 Task 01 for guidance) 
 nb <- data.frame(________, _________, ________)
