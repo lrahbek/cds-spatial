@@ -42,7 +42,7 @@ To get started with `mapboxapi`, you’ll need to first install some packages. `
 #install.packages("Rcpp")
 #install.packages("fasterize")
 #install.packages("mapboxapi", dependencies = TRUE)
-library("Rcpp", "fasterize", "readr")
+pacman::p_load("Rcpp", "fasterize", "readr", "sf", "tidyverse" )
 ```
 
 ## MapboxAPI
@@ -399,14 +399,15 @@ The next steps will take you through the opencage API package to geocode a list 
 
 If you want to know more, the opencage vignettes are really great! There are “Introduction to opencage” [vignette("opencage")](https://docs.ropensci.org/opencage/articles/opencage.html);  “Customise your query” [vignette("customise_query")](https://docs.ropensci.org/opencage/articles/customise_query.html) and “Output options” [vignette("output_options")](https://docs.ropensci.org/opencage/articles/output_options.html)
 ```{r opencage-auth, eval = FALSE}
-library(opencage)
+pacman::p_load(opencage)
 library(tidyverse)
+my_token <- readr::read_file("../../tokens/opencageAPI_token.txt")
 
 # see configuration options
 help(oc_config)
 
 # set key in the environment
-Sys.setenv(OPENCAGE_KEY = "YOUR KEY")
+Sys.setenv(OPENCAGE_KEY = my_token)
 
 # set the key interactively if it is missing.
 oc_config()
@@ -426,12 +427,29 @@ leaflet() %>%
 Let's try with a vector of addresses. You might need to clean the list above in regex101.com before you make it into a character list!  Alternatively, check out [this](https://regex101.com/r/kbGyPh/1)
 
 ```{r hospital-list}
-hospitals <- c("Regionshospitalet Brædstrup in Brædstrup","Regionshospitalet Grenaa in Grenaa","Regionshospitalet Hammel Neurocenter in Hammel","Regionshospitalet Herning in Herning","Regionshospitalet Holstebro in Holstebro","Regionshospitalet Horsens in Horsens","Regionshospitalet Kjellerup in Kjellerup","Regionshospitalet Lemvig in Lemvig","Regionshospitalet Odder in Odder","Regionshospitalet Randers in Randers","Regionshospitalet Ringkøbing in Ringkøbing","Regionshospitalet Samsø on the island of Samsø","Regionshospitalet Silkeborg in Silkeborg","Regionshospitalet Skanderborg Sundhedscenter in Skanderborg","Regionshospitalet Skive in Skive","Regionshospitalet Tarm in Tarm","Regionshospitalet Viborg in Viborg","Aarhus Universitetshospital Skejby in Aarhus")
+hospitals <- c("Regionshospitalet Brædstrup in Brædstrup",
+               "Regionshospitalet Grenaa in Grenaa",
+               "Hammel Neurocenter",
+               "Regionshospitalet Herning",
+               "Regionshospitalet Holstebro in Holstebro",
+               "Regionshospitalet Horsens in Horsens",
+               "Regionshospitalet Kjellerup in Kjellerup",
+               "Regionshospitalet Lemvig in Lemvig",
+               "Regionshospitalet Odder in Odder",
+               "Regionshospitalet Randers in Randers",
+               "Regionshospitalet Ringkøbing in Ringkøbing",
+               "Samsø Sundheds- og Akuthus",
+               "Regionshospitalet Silkeborg",
+               "Skanderborg Sundhedscenter",
+               "Regionshospitalet Skive in Skive",
+               "Regionshospitalet Tarm in Tarm",
+               "Regionshospitalet Viborg",
+               "Aarhus Universitetshospital Aarhus N")
 ```
 
 Batch-geocode!
 ```{r geocode-h, eval=FALSE}
-h <- oc_forward_df(placename = hospitals, countrycode = "DK", limit =1, no_annotations = TRUE)
+#h <- oc_forward_df(placename = hospitals, countrycode = "DK", limit =1, no_annotations = TRUE)
 
 # Look at the object
 h
@@ -442,16 +460,18 @@ leaflet() %>%
   addMarkers(h$oc_lng, h$oc_lat, popup = h$oc_formatted)
 
 # Save object
-# write_csv(h, "data/midty_hospitals.csv")
+
+write_csv(h, "../data/midty_hospitals.csv")
 ```
 
 ### Plot geocoded data
 Well, the list is not perfect in all instances. Sometimes it gets the hospital , other times it places a marker in the middle of a town. If you want to fix it, provide street addresses and re-geocode.
 ```{r h-map, echo = FALSE}
-h <- readRDS("../data/hospitals.rds")
+#h2 <- readRDS("../data/hospitals.rds")
+h3 <- read.csv("../data/midty_hospitals.csv")
 leaflet() %>% 
   addTiles() %>% 
-  addMarkers(h$oc_lng, h$oc_lat,data = h, popup = h$oc_formatted)
+  addMarkers(h3$oc_lng, h3$oc_lat,data = h3, popup = h3$placename)
 ```
 
 
