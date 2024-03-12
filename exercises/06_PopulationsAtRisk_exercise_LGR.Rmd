@@ -14,6 +14,8 @@ library(tidyverse)
 library(sf)
 library(mapboxapi)
 
+pacman::p_load(raster, stringr)
+
 ## Global options
 options(max.print="75")
 opts_chunk$set(echo=TRUE,
@@ -39,8 +41,8 @@ Number of households without cars are available via Danmark Statistik via the  "
 * Load the dataset
 * rename the V3 and V4 column to nc2020 and nc2021. (In the provided dataset the numeric columns are number of carless households in year 2020 and in 2021
 ```{r more-data, eval = FALSE}
-no_cars <- _________("../data/no_cars.csv", header = FALSE)
-names___________ <- c("municipality","nc2020", "nc2021") 
+no_cars <- read.csv("../data/no_cars.csv", header = FALSE, fileEncoding="windows-1252")
+names(no_cars)[2:4] <- c("municipality","nc2020", "nc2021") 
 ```
 
 
@@ -61,22 +63,26 @@ Create a simple feature or spatial polygons dataset that contains information on
 library(tidyverse)
 
 # load household data
-hh <- read.csv2("../data/households2020_2021.csv", header = ______, fileEncoding=___________)
+hh <- read.csv2("../data/households2020_2021.csv", header = F, fileEncoding="windows-1252")
 
 # create a summary of households per municipality
 hh_mun <- hh %>% 
-  group_by(_____) %>% 
-  summarize(sum=sum(____)) %>% 
-  rename(municipality = V2, households = sum)
+  group_by(V2) %>% 
+  summarize(sum20=sum(V3), sum21 = sum(V4)) %>% 
+  rename(municipality = V2, households20 = sum20, households21 = sum21)
 
 # check total households
-sum(hh_mun$households)
+sum(hh_mun$households20)
+sum(hh_mun$households21)
+
+hh_mun$municipality[hh_mun$municipality == "Copenhagen"] <- "København"
+
 
 # join households to no_car dataset and calculate percentages
 hh_nocar <- hh_mun %>% inner_join(no_cars, by = "municipality") 
 hh_nocar <- hh_nocar %>% 
-  mutate(nc2020pct = _______/households*100, 
-         nc2021pct = _______/households*100)
+  mutate(nc2020pct = nc2020/households20*100, 
+         nc2021pct = nc2021/households21*100)
 
 ```
 
@@ -89,22 +95,27 @@ hh_nocar <- hh_nocar %>%
 
 ```{r eval= FALSE}
 # load population (not necessary, I just want to see)
-pop <-  read.csv2("../data/munic_pop_2022Q1.csv", sep = ",", skip = 2, ______= __________)
+#pop <-  read.csv2("../data/munic_pop_2022Q1.csv", sep = ",", skip = 2, ______= __________)
 
-names(pop)[1] <- "Name"
-names(pop)[2] <- "Pop22"
-sum(pop$Pop22)
+#names(pop)[1] <- "Name"
+#names(pop)[2] <- "Pop22"
+#sum(pop$Pop22)
 
 # load municipalities
-________
+munic<- getData("GADM", country = "DNK", level = 2)
+munic_sf <- st_transform(st_as_sf(munic), crs = 25832)
 
 # reconcile municipalities' and hh_nocars' problematic names 
+munic_sf$NAME_2[munic_sf$NAME_2 == "Århus"] <- "Aarhus"
 
-________
+non_match <- munic_sf %>% dplyr::anti_join(hh_nocar, by = c("NAME_2"="municipality")) 
+
+hh_nocar$municipality[hh_nocar$municipality == "Høje-Taastrup"] <- "Høje Taastrup"
+hh_nocar$municipality[hh_nocar$municipality == "Vesthimmerlands"] <- "Vesthimmerland"
 
 # join municipalities with the carless households dataset
 
-no_cars_pct_mun  <-  munic %>% dplyr::inner_join(hh_nocar, by = c("NAME_2"="municipality")) # this preserves the spatial dimension!
+no_cars_pct_mun  <-  munic_sf %>% dplyr::inner_join(hh_nocar, by = c("NAME_2"="municipality")) # this preserves the spatial dimension!
 ```
 
 
@@ -114,10 +125,9 @@ no_cars_pct_mun  <-  munic %>% dplyr::inner_join(hh_nocar, by = c("NAME_2"="muni
 ```{r thematic-map-sol, echo = FALSE}
 
 # see if your join worked
-library(mapview)
-library(leaflet)
+pacman::p_load(mapview, leaflet)
 no_cars_pct_mun %>% 
- # dplyr::filter(nc2021pct >= 25) %>% 
+  dplyr::filter(nc2021pct >= 25) %>% 
   mapview(zcol = "nc2021pct")
 
 ```
@@ -133,6 +143,18 @@ Now of course, you have the whole situation in Denmark. In the next steps, you n
 
 ```{r thematic-map-Midt}
 ## YOUR CODE HERE
+
+regions <- getData("GADM", country = "DNK", level = 1)
+
+regions_sf <- st_transform(st_as_sf(regions), crs = 25832)
+
+midtjylland <- regions_sf[regions_sf$NAME_1 == "Midtjylland",]
+
+no_cars_pct_midt <- st_intersection(midtjylland, no_cars_pct_mun)
+
+no_cars_pct_midt %>% 
+  dplyr::filter(nc2021pct >= 25) %>% 
+  mapview(zcol = "nc2021pct")
 ```
 
 Gosh, that was a ton of wrangling! But we are nearly there! :)
@@ -152,6 +174,29 @@ To do this, follow these steps:
 
 ```{r risk-areas}
 ## YOUR CODE HERE
+
+## read in h file saved in 05b
+h1 <- read.csv("../data/midty_hospitals.csv")
+##transform to sf
+h_sf <- st_as_sf(h1[-17,], coords = c("oc_lng", "oc_lat"), crs = 4326) 
+
+# Cycling range
+cycling_isos <- mb_isochrone(
+  h_sf,
+  profile = "cycling",
+  time = 20,
+  id = "placename"
+)
+
+# transform muni and car info to same crs as h and keep only municiplaities where 25% or above without cars 
+no_cars_pct_midt_4326 <- st_transform(no_cars_pct_midt, crs = 4326)
+no_cars_pct_midt_4326_25 <- no_cars_pct_midt_4326 %>% dplyr::filter(nc2021pct >= 25)
+
+no_cars_h <- st_difference(no_cars_pct_midt_4326_25, st_union(cycling_isos))
+
+leaflet() %>% 
+  addMapboxTiles(style_id = "streets-v11", username = "mapbox") %>% 
+  addPolygons(data = no_cars_h)
 
 ```
 
