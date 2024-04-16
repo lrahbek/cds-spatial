@@ -1,6 +1,6 @@
 pacman::p_load(shiny, leaflet, mapboxapi, sf)
 
-token <- "pk.eyJ1IjoibHJhaGJlayIsImEiOiJjbHRlNmN0cXYwZDB6MmxvZDB4bjFucHZ2In0._9S0iKfn-Hn6ff7bYKHCxQ"
+token
   # Read in the shelter data
 shelter <- readr::read_rds("../data/shelters.rds") 
 
