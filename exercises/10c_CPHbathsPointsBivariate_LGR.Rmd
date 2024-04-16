@@ -92,6 +92,9 @@ library(spatstat)
 st_coordinates(baths_hist)  # 21 coordinates
 st_coordinates(baths_osm)   # 177 coordinates
 
+st_crs(baths_hist) #unit is meter
+st_crs(baths_osm) #unit is meter
+
 combined <- data.frame(rbind(st_coordinates(baths_hist),
                   st_coordinates(baths_osm)))
 
@@ -136,8 +139,7 @@ for(i in 1:999){
 
 ### Compare NN - simulation results visually
 ```{r nn-hist}
-hist(nn.sim,breaks=30, main = "Simulating nearest neighbour distances")
-abline(v=mean(nncross(split(b_ppp)$OSM,split(b_ppp)$HIST)$dist),col="red")
+hist(nn.sim,breaks=30, main = "Simulating nearest neighbour distances");abline(v=mean(nncross(split(b_ppp)$OSM,split(b_ppp)$HIST)$dist),col="red")
 ```
 So the majority of simulated points are considerably closer to their neighbours than the points in our dataset, suggesting that O and H data are dispersed. Now that we know about the dispersal, does it apply at all scales?
 

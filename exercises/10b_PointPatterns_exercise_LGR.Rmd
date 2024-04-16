@@ -38,11 +38,11 @@ p_poisson <- rpoispp(lambda = lambda, win = disc10)
 plot(p_poisson)
 # p_cluster and p_regular
 # Generate clustered points from a Thomas process
-set.seed(123)
+#set.seed(123)
 p_cluster <- rThomas(kappa = 0.35, scale = 1, mu = 3, win = disc10)
 plot(p_cluster)
 # Regular points from a Strauss process
-set.seed(123)
+#set.seed(123)
 p_regular <- rStrauss(beta = 2.9, gamma = 0.025, R = .5, W = disc10)
 plot(p_regular)
 ```
@@ -64,22 +64,28 @@ Three `ppp` objects, `p_poisson`, `p_cluster`, and `p_regular` are defined for y
 p_poisson; p_regular
 
 # Calc nearest-neighbor distances for Poisson point data
-nnd_poisson <- nndist(___)
+nnd_poisson <- nndist(p_poisson)
 
 # Draw a histogram of nearest-neighbor distances
-hist(___)
+hist(nnd_poisson)
 
 # Estimate G(r)
-G_poisson <- Gest(___)
+G_poisson <- Gest(p_poisson)
 
 # Plot G(r) vs. r
-plot(___)
+plot(G_poisson)
 
 # Repeat for regular point data
-nnd_regular <- ___(___)
-___(___)
-G_regular <- ___(___)
-___(___)
+nnd_regular <- nndist(p_regular)
+hist(nnd_regular)
+G_regular <- Gest(p_regular)
+plot(G_regular)
+
+#repeat for clustered points
+nnd_clustered <- nndist(p_cluster)
+hist(nnd_clustered)
+G_cluster <- Gest(p_cluster)
+plot(G_cluster)
 ```
 
 G-force! Next you'll learn about `G`'s friends, `F`, `H`,` J`, `K`, and `L`. Notice how `G` for the regular point pattern stays low at small distance, indicating very low probabilities of finding close pairs of points.
@@ -119,24 +125,24 @@ The `ppp` objects `p_poisson`, `p_cluster`, and `p_regular` are defined for you.
 p_poisson; p_cluster; p_regular
 
 # Estimate the K-function for the Poisson points
-K_poisson <- ___(___, correction = "___")
-
+K_poisson <- Kest(p_poisson, correction = "border")
 # The default plot shows quadratic growth
 plot(K_poisson, . ~ r)
-
 # Subtract pi * r ^ 2 from the Y-axis and plot
-plot(K_poisson, . - ___ ~ r)
+plot(K_poisson, . - pi * r ^ 2 ~ r)
+#possion with envleope (simulations)
+K_poisson_env <- envelope(p_poisson, Kest, correction = "border")
+plot(K_poisson_env, . - pi * r ^ 2 ~ r)
+
 
 # Compute envelopes of K under random locations
-K_cluster_env <- ___(___, ___, correction = "___")
-
+K_cluster_env <- envelope(p_cluster, Kest, correction = "border")
 # Insert the full formula to plot K minus pi * r^2
-plot(K_cluster_env, ___)
+plot(K_cluster_env, . - pi * r ^ 2 ~ r)
 
 # Repeat for regular data
-K_regular_env <- ___(___, ___, correction = ___)
-
-___(___, ___)
+K_regular_env <- envelope(p_regular, Kest, correction = "border")
+plot(K_regular_env, . - pi * r ^ 2 ~ r)
 ```
 
 It can be tricky to make sense of the Ripley's K function results and one needs to develop an eye for them. Linearizing the plot by subtracting the `. - pi * r ^ 2 ~ r` can sometimes help.  
@@ -146,7 +152,35 @@ It can be tricky to make sense of the Ripley's K function results and one needs 
 Load a `ppp` object called `redoak` which contains the locations of trees in a woodland. Plot the tree locations and then test the hypothesis that the points are clustered against a null hypothesis of a random uniform distribution.
 
 ```{r, eval= FALSE}
-redoak <- readRDS("data/redoak.rds")
+redoak <- readRDS("../data/redoak.rds")
+```
+
+```{r}
+#plot the point pattern
+plot(redoak)
+#test if the point pattern is more clustered than random (CSR) using quadrat.test
+qt_re = quadrat.test(redoak, alternative = "clustered")
+plot(qt_re)
+print(qt_re)
+#Calc nearest neigbor distances and plot as hist
+hi_re = nndist(redoak)
+hist(hi_re)
+# Estitamte G
+G_re <- Gest(redoak)
+plot(G_re)
+# estimate K
+K_re_env <- envelope(redoak, Kest, correction = "border")
+plot(K_re_env, . - pi * r ^ 2 ~ r)
+K_re <- Kest(redoak , correction = "border")
+plot(K_re, . - pi * r ^ 2 ~ r)
+plot(K_re)
+
+
+## quadrat test: low p-value means clustered point pattern
+## nn_dist: values are clustered in low end 
+## G: black line above red in some areas means clustered at these distances 
+## K: blak line of observatiuon is constantly above the red of randomness
+## K envelope: obs values diverge from the random background, they are clustered, from dist 1 to 2,5 is signficance clustering, aftwewards not so much 
 ```
 
 ## Possible Answers
