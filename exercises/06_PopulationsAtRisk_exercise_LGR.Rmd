@@ -127,7 +127,7 @@ no_cars_pct_mun  <-  munic_sf %>% dplyr::inner_join(hh_nocar, by = c("NAME_2"="m
 # see if your join worked
 pacman::p_load(mapview, leaflet)
 no_cars_pct_mun %>% 
-  dplyr::filter(nc2021pct >= 25) %>% 
+  #dplyr::filter(nc2021pct >= 25) %>% 
   mapview(zcol = "nc2021pct")
 
 ```
